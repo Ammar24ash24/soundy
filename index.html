@@ -1,185 +1,485 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-  <head>
+<head>
     <meta charset="UTF-8">
-    <title>تشغيل الصوت التلقائي - mam.mp3</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- TailwindCSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>مشغل الصوت التلقائي</title>
     <style>
-      /* Custom styles for audio controls */
-      .audio-wrapper {
-        max-width: 420px;
-        margin: 0 auto;
-        background: #f3f4f6;
-        border-radius: 1.5rem;
-        box-shadow: 0 6px 24px rgba(0,0,0,0.08);
-        padding: 2.5rem 2rem 3rem 2rem;
-        margin-top: 6vh;
-        position: relative;
-      }
-      .custom-audio-btn {
-        outline: none;
-        appearance: none;
-        border: none;
-        background: none;
-        cursor: pointer;
-        width: 68px;
-        height: 68px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #9333EA 40%, #14B8A6 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 4px 16px rgba(80,28,235,0.11);
-        transition: transform 0.18s cubic-bezier(.7,.1,.3,1);
-      }
-      .custom-audio-btn:active {
-        transform: scale(0.96);
-      }
-      .custom-progress-bar {
-        width: 100%;
-        height: 8px;
-        background: #E5E7EB;
-        border-radius: 4px;
-        overflow: hidden;
-        margin-block: 28px 12px;
-        position: relative;
-      }
-      .custom-progress {
-        background: linear-gradient(90deg, #A78BFA 50%, #06B6D4 100%);
-        height: 100%;
-        border-radius: 4px;
-        width: 0%;
-        transition: width 0.3s;
-      }
-      .time-label {
-        font-size: 15px;
-        color: #5e596d;
-      }
-    </style>
-  </head>
-  <body class="bg-gradient-to-br from-white to-purple-50 min-h-screen font-sans">
-    <main class="flex flex-col min-h-screen items-center justify-center">
-      <div class="audio-wrapper shadow-xl border-t-4 border-purple-600">
-        <div class="flex flex-col items-center">
-          <img 
-            src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/d32dce09-86c4-4795-8423-9cae4c1a5b8c.png" 
-            alt="صورة توضيحية لتشغيل ملف صوتي بعنوان mam.mp3، ألوان بنفسجي وأزرق، نمط أيقوني عصري، بدون وجوه" 
-            class="rounded-xl w-full max-w-xs h-40 object-cover bg-gray-300 mb-6"
-            onerror="this.style.display='none';this.parentNode.style.background='#ede9fe';"
-          />
-
-          <h1 class="text-2xl font-bold mb-2 text-purple-800">تشغيل الصوت التلقائي</h1>
-          <p class="mb-2 text-gray-600 text-base">سيبدأ الصوت تلقائياً. يمكنك إعادة تشغيله بعد انتهاء التشغيل.</p>
-          
-          <div class="relative w-full mt-4">
-            <button id="playPauseBtn" class="custom-audio-btn group mx-auto" aria-label="تشغيل/إيقاف الصوت">
-              <!-- Play & Pause Icons as SVGs -->
-              <svg id="playIcon" xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white group-hover:text-sky-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display:none;">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.5 3.5v17l15-8.5-15-8.5z"/>
-              </svg>
-              <svg id="pauseIcon" xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white group-hover:text-sky-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <rect x="6" y="4.5" width="4" height="15" rx="1.2"/>
-                <rect x="14" y="4.5" width="4" height="15" rx="1.2"/>
-              </svg>
-            </button>
-          </div>
-
-          <div class="custom-progress-bar mt-2 w-full">
-            <div class="custom-progress" id="progressBar"></div>
-          </div>
-          <div class="flex justify-between w-full mt-1">
-            <span class="time-label" id="currentTime">0:00</span>
-            <span class="time-label" id="duration">0:03</span> <!-- مدة الريكورد 3 ثواني -->
-          </div>
-        </div>
-        <audio id="audio" src="mam.mp3" preload="auto" autoplay></audio>
-      </div>
-    </main>
-    <script>
-      const audio = document.getElementById('audio');
-      const playPauseBtn = document.getElementById('playPauseBtn');
-      const playIcon = document.getElementById('playIcon');
-      const pauseIcon = document.getElementById('pauseIcon');
-      const progressBar = document.getElementById('progressBar');
-      const currentTimeLabel = document.getElementById('currentTime');
-      const durationLabel = document.getElementById('duration');
-
-      // Format seconds as mm:ss
-      function formatTime(s) {
-        if (isNaN(s)) return "0:00";
-        const m = Math.floor(s / 60);
-        const sec = Math.floor(s % 60).toString().padStart(2,'0');
-        return `${m}:${sec}`;
-      }
-
-      // Update progress bar and times
-      function updateProgress() {
-        currentTimeLabel.textContent = formatTime(audio.currentTime);
-        progressBar.style.width = ((audio.currentTime / audio.duration) * 100 || 0) + "%";
-      }
-      function updateDuration() {
-        durationLabel.textContent = formatTime(audio.duration);
-        currentTimeLabel.textContent = formatTime(audio.currentTime);
-      }
-      audio.addEventListener('timeupdate', updateProgress);
-      audio.addEventListener('loadedmetadata', updateDuration);
-
-      // Audio controls
-      function playAudio() {
-        audio.play();
-        playIcon.style.display = "none";
-        pauseIcon.style.display = "";
-      }
-      function pauseAudio() {
-        audio.pause();
-        playIcon.style.display = "";
-        pauseIcon.style.display = "none";
-      }
-
-      // Play/Pause toggle
-      playPauseBtn.addEventListener('click', function () {
-        if (audio.paused) {
-          playAudio();
-        } else {
-          pauseAudio();
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-      });
 
-      // On audio end: return to play icon
-      audio.addEventListener('ended', function () {
-        pauseAudio();
-        audio.currentTime = 0;
-        updateProgress();
-      });
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
 
-      // Seeking by clicking progress bar
-      document.querySelector('.custom-progress-bar').addEventListener('click', function (e) {
-        const rect = this.getBoundingClientRect();
-        const seekTime = ((e.clientX - rect.left) / rect.width) * audio.duration;
-        audio.currentTime = seekTime;
-      });
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            text-align: center;
+        }
 
-      // Auto-play on load using autoplay attribute for best compatibility
-      window.addEventListener("DOMContentLoaded", function () {
-        audio.play().then(() => {
-          playIcon.style.display = "none";
-          pauseIcon.style.display = "";
-        }).catch(() => {
-          // Auto-play failed due to browser policy, try again on user click anywhere on page
-          function tryPlay() {
-            audio.play().then(() => {
-              playIcon.style.display = "none";
-              pauseIcon.style.display = "";
-            });
-            document.body.removeEventListener('click', tryPlay);
-          }
-          document.body.addEventListener('click', tryPlay);
+        .audio-player {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 30px;
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .audio-player::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .audio-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .status {
+            font-size: 1.2rem;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .status.playing {
+            background: rgba(76, 175, 80, 0.3);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0 0 10px rgba(76, 175, 80, 0.5); }
+            to { box-shadow: 0 0 20px rgba(76, 175, 80, 0.8); }
+        }
+
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+            color: white;
+            box-shadow: 0 4px 15px rgba(238, 90, 82, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(238, 90, 82, 0.6);
+        }
+
+        .btn.play {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+        }
+
+        .btn.play:hover {
+            box-shadow: 0 8px 25px rgba(78, 205, 196, 0.6);
+        }
+
+        .progress-container {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+            width: 0%;
+            transition: width 0.1s ease;
+            border-radius: 10px;
+        }
+
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            opacity: 0.8;
+        }
+
+        .error-message {
+            background: rgba(244, 67, 54, 0.3);
+            color: #ffebee;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .volume-control {
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .volume-slider {
+            width: 200px;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.3);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #4ecdc4;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 20px;
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>مشغل الصوت التلقائي</h1>
+        
+        <div class="audio-player">
+            <div class="audio-icon">🎵</div>
+            <div id="status" class="status">جاري تحميل الملف الصوتي...</div>
+            
+            <div class="progress-container">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
+            
+            <div class="time-display">
+                <span id="currentTime">0:00</span>
+                <span id="duration">0:00</span>
+            </div>
+        </div>
+
+        <div class="volume-control">
+            <span>🔊</span>
+            <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="70">
+            <span id="volumeValue">70%</span>
+        </div>
+
+        <div class="controls">
+            <button id="playBtn" class="btn play">تشغيل</button>
+            <button id="pauseBtn" class="btn">إيقاف مؤقت</button>
+            <button id="restartBtn" class="btn">إعادة تشغيل</button>
+        </div>
+
+        <div id="errorMessage" class="error-message"></div>
+
+        <!-- Audio Element -->
+        <audio id="audioPlayer" preload="auto">
+            <source src="mam.mp3" type="audio/mpeg">
+            متصفحك لا يدعم تشغيل الملفات الصوتية
+        </audio>
+    </div>
+
+    <script>
+        class AudioPlayerController {
+            constructor() {
+                this.audio = document.getElementById('audioPlayer');
+                this.playBtn = document.getElementById('playBtn');
+                this.pauseBtn = document.getElementById('pauseBtn');
+                this.restartBtn = document.getElementById('restartBtn');
+                this.status = document.getElementById('status');
+                this.progressBar = document.getElementById('progressBar');
+                this.currentTimeDisplay = document.getElementById('currentTime');
+                this.durationDisplay = document.getElementById('duration');
+                this.volumeSlider = document.getElementById('volumeSlider');
+                this.volumeValue = document.getElementById('volumeValue');
+                this.errorMessage = document.getElementById('errorMessage');
+                
+                this.isPlaying = false;
+                this.autoPlayAttempted = false;
+                
+                this.initializePlayer();
+                this.bindEvents();
+            }
+
+            initializePlayer() {
+                // Set initial volume
+                this.audio.volume = 0.7;
+                
+                // Try to enable autoplay
+                this.audio.setAttribute('autoplay', 'true');
+                this.audio.setAttribute('muted', 'false');
+                
+                // Attempt autoplay after a short delay
+                setTimeout(() => {
+                    this.attemptAutoplay();
+                }, 500);
+            }
+
+            async attemptAutoplay() {
+                try {
+                    this.updateStatus('جاري محاولة التشغيل التلقائي...');
+                    
+                    // Try to play the audio
+                    const playPromise = this.audio.play();
+                    
+                    if (playPromise !== undefined) {
+                        await playPromise;
+                        this.isPlaying = true;
+                        this.updateStatus('يتم التشغيل تلقائياً...', true);
+                        this.autoPlayAttempted = true;
+                    }
+                } catch (error) {
+                    console.log('Autoplay prevented:', error);
+                    this.handleAutoplayBlocked();
+                }
+            }
+
+            handleAutoplayBlocked() {
+                this.updateStatus('انقر على زر التشغيل للبدء (التشغيل التلقائي محظور)');
+                this.showError('التشغيل التلقائي محظور في هذا المتصفح. الرجاء الضغط على زر التشغيل.');
+                
+                // Enable user interaction
+                this.enableUserControls();
+            }
+
+            enableUserControls() {
+                // Add click handler to document for first user interaction
+                const enableAudio = async () => {
+                    try {
+                        await this.audio.play();
+                        this.isPlaying = true;
+                        this.updateStatus('يتم التشغيل...', true);
+                        document.removeEventListener('click', enableAudio);
+                    } catch (error) {
+                        console.error('Error playing audio:', error);
+                    }
+                };
+                
+                document.addEventListener('click', enableAudio, { once: true });
+            }
+
+            bindEvents() {
+                // Audio events
+                this.audio.addEventListener('loadstart', () => {
+                    this.updateStatus('جاري تحميل الملف...');
+                });
+
+                this.audio.addEventListener('canplay', () => {
+                    this.updateStatus('الملف جاهز للتشغيل');
+                    this.updateDuration();
+                });
+
+                this.audio.addEventListener('play', () => {
+                    this.isPlaying = true;
+                    this.updateStatus('جاري التشغيل...', true);
+                });
+
+                this.audio.addEventListener('pause', () => {
+                    this.isPlaying = false;
+                    this.updateStatus('تم إيقاف التشغيل مؤقتاً');
+                });
+
+                this.audio.addEventListener('ended', () => {
+                    this.isPlaying = false;
+                    this.updateStatus('انتهى التشغيل');
+                    this.progressBar.style.width = '100%';
+                });
+
+                this.audio.addEventListener('timeupdate', () => {
+                    this.updateProgress();
+                });
+
+                this.audio.addEventListener('error', (e) => {
+                    this.handleError(e);
+                });
+
+                // Button events
+                this.playBtn.addEventListener('click', () => this.play());
+                this.pauseBtn.addEventListener('click', () => this.pause());
+                this.restartBtn.addEventListener('click', () => this.restart());
+
+                // Volume control
+                this.volumeSlider.addEventListener('input', (e) => {
+                    const volume = e.target.value / 100;
+                    this.audio.volume = volume;
+                    this.volumeValue.textContent = `${e.target.value}%`;
+                });
+            }
+
+            async play() {
+                try {
+                    await this.audio.play();
+                    this.isPlaying = true;
+                    this.updateStatus('جاري التشغيل...', true);
+                } catch (error) {
+                    this.handleError(error);
+                }
+            }
+
+            pause() {
+                this.audio.pause();
+                this.isPlaying = false;
+                this.updateStatus('تم إيقاف التشغيل مؤقتاً');
+            }
+
+            restart() {
+                this.audio.currentTime = 0;
+                if (this.isPlaying) {
+                    this.play();
+                }
+                this.updateStatus('تم إعادة التشغيل');
+            }
+
+            updateStatus(message, playing = false) {
+                this.status.textContent = message;
+                if (playing) {
+                    this.status.classList.add('playing');
+                } else {
+                    this.status.classList.remove('playing');
+                }
+            }
+
+            updateProgress() {
+                if (this.audio.duration) {
+                    const progress = (this.audio.currentTime / this.audio.duration) * 100;
+                    this.progressBar.style.width = `${progress}%`;
+                    
+                    // Update time displays
+                    this.currentTimeDisplay.textContent = this.formatTime(this.audio.currentTime);
+                }
+            }
+
+            updateDuration() {
+                if (this.audio.duration) {
+                    this.durationDisplay.textContent = this.formatTime(this.audio.duration);
+                }
+            }
+
+            formatTime(seconds) {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = Math.floor(seconds % 60);
+                return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+            }
+
+            handleError(error) {
+                console.error('Audio error:', error);
+                let errorMsg = 'خطأ في تشغيل الملف الصوتي';
+                
+                if (error.target && error.target.error) {
+                    switch (error.target.error.code) {
+                        case 1:
+                            errorMsg = 'تم إلغاء تحميل الملف';
+                            break;
+                        case 2:
+                            errorMsg = 'خطأ في الشبكة';
+                            break;
+                        case 3:
+                            errorMsg = 'خطأ في فك ترميز الملف';
+                            break;
+                        case 4:
+                            errorMsg = 'نوع الملف غير مدعوم أو الملف غير موجود';
+                            break;
+                    }
+                }
+                
+                this.updateStatus(errorMsg);
+                this.showError(`${errorMsg}. تأكد من وجود ملف "mam.mp3" في نفس مجلد الصفحة.`);
+            }
+
+            showError(message) {
+                this.errorMessage.textContent = message;
+                this.errorMessage.style.display = 'block';
+                
+                // Hide error after 10 seconds
+                setTimeout(() => {
+                    this.errorMessage.style.display = 'none';
+                }, 10000);
+            }
+        }
+
+        // Initialize player when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new AudioPlayerController();
         });
-        updateDuration();
-      });
 
+        // Handle page visibility change
+        document.addEventListener('visibilitychange', () => {
+            const audio = document.getElementById('audioPlayer');
+            if (document.hidden && audio && !audio.paused) {
+                // Optionally pause when page becomes hidden
+                // audio.pause();
+            }
+        });
     </script>
-  </body>
+</body>
 </html>
+
