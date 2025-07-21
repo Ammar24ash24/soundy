@@ -94,7 +94,7 @@
             <span class="time-label" id="duration">0:00</span>
           </div>
         </div>
-        <audio id="audio" src="mam.mp3" preload="auto"></audio>
+        <audio id="audio" src="mam.mp3" preload="auto" autoplay></audio>
       </div>
     </main>
     <script>
@@ -161,19 +161,23 @@
         audio.currentTime = seekTime;
       });
 
-      // Auto-play on load (works on most browsers except strict mobile policies)
-      window.addEventListener("DOMContentLoaded", async function () {
-        await audio.play().catch(() => {
-          // Most browsers will block auto-play unless audio is muted or user interacted
-        });
-        updateDuration();
-        if (!audio.paused) {
+      // Auto-play on load using autoplay attribute for best compatibility
+      window.addEventListener("DOMContentLoaded", function () {
+        audio.play().then(() => {
           playIcon.style.display = "none";
           pauseIcon.style.display = "";
-        } else {
-          playIcon.style.display = "";
-          pauseIcon.style.display = "none";
-        }
+        }).catch(() => {
+          // Auto-play failed due to browser policy, try again on user click anywhere on page
+          function tryPlay() {
+            audio.play().then(() => {
+              playIcon.style.display = "none";
+              pauseIcon.style.display = "";
+            });
+            document.body.removeEventListener('click', tryPlay);
+          }
+          document.body.addEventListener('click', tryPlay);
+        });
+        updateDuration();
       });
 
     </script>
