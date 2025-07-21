@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8">
+    <title>تشغيل الصوت التلقائي - mam.mp3</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- TailwindCSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Custom styles for audio controls */
+      .audio-wrapper {
+        max-width: 420px;
+        margin: 0 auto;
+        background: #f3f4f6;
+        border-radius: 1.5rem;
+        box-shadow: 0 6px 24px rgba(0,0,0,0.08);
+        padding: 2.5rem 2rem 3rem 2rem;
+        margin-top: 6vh;
+        position: relative;
+      }
+      .custom-audio-btn {
+        outline: none;
+        appearance: none;
+        border: none;
+        background: none;
+        cursor: pointer;
+        width: 68px;
+        height: 68px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #9333EA 40%, #14B8A6 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 16px rgba(80,28,235,0.11);
+        transition: transform 0.18s cubic-bezier(.7,.1,.3,1);
+      }
+      .custom-audio-btn:active {
+        transform: scale(0.96);
+      }
+      .custom-progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #E5E7EB;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-block: 28px 12px;
+        position: relative;
+      }
+      .custom-progress {
+        background: linear-gradient(90deg, #A78BFA 50%, #06B6D4 100%);
+        height: 100%;
+        border-radius: 4px;
+        width: 0%;
+        transition: width 0.3s;
+      }
+      .time-label {
+        font-size: 15px;
+        color: #5e596d;
+      }
+    </style>
+  </head>
+  <body class="bg-gradient-to-br from-white to-purple-50 min-h-screen font-sans">
+    <main class="flex flex-col min-h-screen items-center justify-center">
+      <div class="audio-wrapper shadow-xl border-t-4 border-purple-600">
+        <div class="flex flex-col items-center">
+          <img 
+            src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/d32dce09-86c4-4795-8423-9cae4c1a5b8c.png" 
+            alt="صورة توضيحية لتشغيل ملف صوتي بعنوان mam.mp3، ألوان بنفسجي وأزرق، نمط أيقوني عصري، بدون وجوه" 
+            class="rounded-xl w-full max-w-xs h-40 object-cover bg-gray-300 mb-6"
+            onerror="this.style.display='none';this.parentNode.style.background='#ede9fe';"
+          />
+
+          <h1 class="text-2xl font-bold mb-2 text-purple-800">تشغيل الصوت التلقائي</h1>
+          <p class="mb-2 text-gray-600 text-base">سيبدأ الصوت تلقائياً. يمكنك إعادة تشغيله بعد انتهاء التشغيل.</p>
+          
+          <div class="relative w-full mt-4">
+            <button id="playPauseBtn" class="custom-audio-btn group mx-auto" aria-label="تشغيل/إيقاف الصوت">
+              <!-- Play & Pause Icons as SVGs -->
+              <svg id="playIcon" xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white group-hover:text-sky-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="display:none;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.5 3.5v17l15-8.5-15-8.5z"/>
+              </svg>
+              <svg id="pauseIcon" xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-white group-hover:text-sky-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <rect x="6" y="4.5" width="4" height="15" rx="1.2"/>
+                <rect x="14" y="4.5" width="4" height="15" rx="1.2"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="custom-progress-bar mt-2 w-full">
+            <div class="custom-progress" id="progressBar"></div>
+          </div>
+          <div class="flex justify-between w-full mt-1">
+            <span class="time-label" id="currentTime">0:00</span>
+            <span class="time-label" id="duration">0:00</span>
+          </div>
+        </div>
+        <audio id="audio" src="mam.mp3" preload="auto"></audio>
+      </div>
+    </main>
+    <script>
+      const audio = document.getElementById('audio');
+      const playPauseBtn = document.getElementById('playPauseBtn');
+      const playIcon = document.getElementById('playIcon');
+      const pauseIcon = document.getElementById('pauseIcon');
+      const progressBar = document.getElementById('progressBar');
+      const currentTimeLabel = document.getElementById('currentTime');
+      const durationLabel = document.getElementById('duration');
+
+      // Format seconds as mm:ss
+      function formatTime(s) {
+        if (isNaN(s)) return "0:00";
+        const m = Math.floor(s / 60);
+        const sec = Math.floor(s % 60).toString().padStart(2,'0');
+        return `${m}:${sec}`;
+      }
+
+      // Update progress bar and times
+      function updateProgress() {
+        currentTimeLabel.textContent = formatTime(audio.currentTime);
+        progressBar.style.width = ((audio.currentTime / audio.duration) * 100 || 0) + "%";
+      }
+      function updateDuration() {
+        durationLabel.textContent = formatTime(audio.duration);
+        currentTimeLabel.textContent = formatTime(audio.currentTime);
+      }
+      audio.addEventListener('timeupdate', updateProgress);
+      audio.addEventListener('loadedmetadata', updateDuration);
+
+      // Audio controls
+      function playAudio() {
+        audio.play();
+        playIcon.style.display = "none";
+        pauseIcon.style.display = "";
+      }
+      function pauseAudio() {
+        audio.pause();
+        playIcon.style.display = "";
+        pauseIcon.style.display = "none";
+      }
+
+      // Play/Pause toggle
+      playPauseBtn.addEventListener('click', function () {
+        if (audio.paused) {
+          playAudio();
+        } else {
+          pauseAudio();
+        }
+      });
+
+      // On audio end: return to play icon
+      audio.addEventListener('ended', function () {
+        pauseAudio();
+        audio.currentTime = 0;
+        updateProgress();
+      });
+
+      // Seeking by clicking progress bar
+      document.querySelector('.custom-progress-bar').addEventListener('click', function (e) {
+        const rect = this.getBoundingClientRect();
+        const seekTime = ((e.clientX - rect.left) / rect.width) * audio.duration;
+        audio.currentTime = seekTime;
+      });
+
+      // Auto-play on load (works on most browsers except strict mobile policies)
+      window.addEventListener("DOMContentLoaded", async function () {
+        await audio.play().catch(() => {
+          // Most browsers will block auto-play unless audio is muted or user interacted
+        });
+        updateDuration();
+        if (!audio.paused) {
+          playIcon.style.display = "none";
+          pauseIcon.style.display = "";
+        } else {
+          playIcon.style.display = "";
+          pauseIcon.style.display = "none";
+        }
+      });
+
+    </script>
+  </body>
+</html>
+
