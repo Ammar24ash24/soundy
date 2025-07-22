@@ -152,15 +152,6 @@
             opacity: 0.8;
         }
 
-        .error-message {
-            background: rgba(244, 67, 54, 0.3);
-            color: #ffebee;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 20px 0;
-            display: none;
-        }
-
         .volume-control {
             margin: 20px 0;
             display: flex;
@@ -185,6 +176,18 @@
             border-radius: 50%;
             background: #4ecdc4;
             cursor: pointer;
+        }
+
+        .streaming-indicator {
+            display: inline-block;
+            margin-left: 10px;
+            color: #4ecdc4;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
         }
 
         @media (max-width: 768px) {
@@ -239,17 +242,15 @@
             <button id="restartBtn" class="btn">إعادة تشغيل</button>
         </div>
 
-        <div id="errorMessage" class="error-message"></div>
-
-        <!-- Audio Element -->
-        <audio id="audioPlayer" preload="auto">
+        <!-- Audio Element with autoplay -->
+        <audio id="audioPlayer" autoplay preload="auto" controls style="margin-top: 20px; width: 100%; max-width: 400px;">
             <source src="https://n.uguu.se/gitDGzma.mp3" type="audio/mpeg">
             متصفحك لا يدعم تشغيل الملفات الصوتية
         </audio>
     </div>
 
     <script>
-        class AudioPlayerController {
+        class SimpleAudioPlayer {
             constructor() {
                 this.audio = document.getElementById('audioPlayer');
                 this.playBtn = document.getElementById('playBtn');
@@ -261,10 +262,6 @@
                 this.durationDisplay = document.getElementById('duration');
                 this.volumeSlider = document.getElementById('volumeSlider');
                 this.volumeValue = document.getElementById('volumeValue');
-                this.errorMessage = document.getElementById('errorMessage');
-                
-                this.isPlaying = false;
-                this.autoPlayAttempted = false;
                 
                 this.initializePlayer();
                 this.bindEvents();
@@ -274,63 +271,23 @@
                 // Set initial volume
                 this.audio.volume = 0.7;
                 
-                // Try to enable autoplay
-                this.audio.setAttribute('autoplay', 'true');
-                this.audio.setAttribute('muted', 'false');
-                
-                // Attempt autoplay after a short delay
-                setTimeout(() => {
-                    this.attemptAutoplay();
-                }, 500);
-            }
-
-            async attemptAutoplay() {
-                try {
-                    this.updateStatus('جاري محاولة التشغيل التلقائي...');
-                    
-                    // Try to play the audio
-                    const playPromise = this.audio.play();
-                    
-                    if (playPromise !== undefined) {
-                        await playPromise;
-                        this.isPlaying = true;
-                        this.updateStatus('يتم التشغيل تلقائياً...', true);
-                        this.autoPlayAttempted = true;
-                    }
-                } catch (error) {
-                    console.log('Autoplay prevented:', error);
-                    this.handleAutoplayBlocked();
-                }
-            }
-
-            handleAutoplayBlocked() {
-                this.updateStatus('انقر على زر التشغيل للبدء (التشغيل التلقائي محظور)');
-                this.showError('التشغيل التلقائي محظور في هذا المتصفح. الرجاء الضغط على زر التشغيل.');
-                
-                // Enable user interaction
-                this.enableUserControls();
-            }
-
-            enableUserControls() {
-                // Add click handler to document for first user interaction
-                const enableAudio = async () => {
-                    try {
-                        await this.audio.play();
-                        this.isPlaying = true;
-                        this.updateStatus('يتم التشغيل...', true);
-                        document.removeEventListener('click', enableAudio);
-                    } catch (error) {
-                        console.error('Error playing audio:', error);
-                    }
-                };
-                
-                document.addEventListener('click', enableAudio, { once: true });
+                // Start autoplay immediately
+                this.audio.play().then(() => {
+                    this.updateStatus('يتم التشغيل تلقائياً... <span class="streaming-indicator">🔴 LIVE</span>', true);
+                }).catch((error) => {
+                    console.log('Autoplay failed:', error);
+                    this.updateStatus('اضغط تشغيل للبدء');
+                });
             }
 
             bindEvents() {
                 // Audio events
                 this.audio.addEventListener('loadstart', () => {
-                    this.updateStatus('جاري تحميل الملف...');
+                    this.updateStatus('جاري الاتصال بالخادم...');
+                });
+
+                this.audio.addEventListener('loadeddata', () => {
+                    this.updateStatus('تم تحميل البيانات الأولية');
                 });
 
                 this.audio.addEventListener('canplay', () => {
@@ -339,23 +296,28 @@
                 });
 
                 this.audio.addEventListener('play', () => {
-                    this.isPlaying = true;
-                    this.updateStatus('جاري التشغيل...', true);
+                    this.updateStatus('جاري التشغيل... <span class="streaming-indicator">🔴 LIVE</span>', true);
                 });
 
                 this.audio.addEventListener('pause', () => {
-                    this.isPlaying = false;
                     this.updateStatus('تم إيقاف التشغيل مؤقتاً');
                 });
 
                 this.audio.addEventListener('ended', () => {
-                    this.isPlaying = false;
                     this.updateStatus('انتهى التشغيل');
                     this.progressBar.style.width = '100%';
                 });
 
                 this.audio.addEventListener('timeupdate', () => {
                     this.updateProgress();
+                });
+
+                this.audio.addEventListener('waiting', () => {
+                    this.updateStatus('جاري التحميل... <span class="streaming-indicator">⏳</span>');
+                });
+
+                this.audio.addEventListener('playing', () => {
+                    this.updateStatus('يتم التشغيل... <span class="streaming-indicator">🔴 LIVE</span>', true);
                 });
 
                 this.audio.addEventListener('error', (e) => {
@@ -375,32 +337,29 @@
                 });
             }
 
-            async play() {
-                try {
-                    await this.audio.play();
-                    this.isPlaying = true;
-                    this.updateStatus('جاري التشغيل...', true);
-                } catch (error) {
-                    this.handleError(error);
-                }
+            play() {
+                this.audio.play().then(() => {
+                    this.updateStatus('يتم التشغيل... <span class="streaming-indicator">🔴 LIVE</span>', true);
+                }).catch((error) => {
+                    console.error('Play failed:', error);
+                    this.updateStatus('خطأ في التشغيل');
+                });
             }
 
             pause() {
                 this.audio.pause();
-                this.isPlaying = false;
                 this.updateStatus('تم إيقاف التشغيل مؤقتاً');
             }
 
             restart() {
                 this.audio.currentTime = 0;
-                if (this.isPlaying) {
-                    this.play();
-                }
-                this.updateStatus('تم إعادة التشغيل');
+                this.audio.play().then(() => {
+                    this.updateStatus('تم إعادة التشغيل... <span class="streaming-indicator">🔴 LIVE</span>', true);
+                });
             }
 
             updateStatus(message, playing = false) {
-                this.status.textContent = message;
+                this.status.innerHTML = message;
                 if (playing) {
                     this.status.classList.add('playing');
                 } else {
@@ -409,7 +368,7 @@
             }
 
             updateProgress() {
-                if (this.audio.duration) {
+                if (this.audio.duration && !isNaN(this.audio.duration)) {
                     const progress = (this.audio.currentTime / this.audio.duration) * 100;
                     this.progressBar.style.width = `${progress}%`;
                     
@@ -419,12 +378,15 @@
             }
 
             updateDuration() {
-                if (this.audio.duration) {
+                if (this.audio.duration && !isNaN(this.audio.duration)) {
                     this.durationDisplay.textContent = this.formatTime(this.audio.duration);
+                } else {
+                    this.durationDisplay.textContent = 'STREAM';
                 }
             }
 
             formatTime(seconds) {
+                if (!seconds || isNaN(seconds)) return '0:00';
                 const minutes = Math.floor(seconds / 60);
                 const remainingSeconds = Math.floor(seconds % 60);
                 return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
@@ -440,46 +402,25 @@
                             errorMsg = 'تم إلغاء تحميل الملف';
                             break;
                         case 2:
-                            errorMsg = 'خطأ في الشبكة';
+                            errorMsg = 'خطأ في الشبكة أو الاتصال';
                             break;
                         case 3:
                             errorMsg = 'خطأ في فك ترميز الملف';
                             break;
                         case 4:
-                            errorMsg = 'نوع الملف غير مدعوم أو الملف غير موجود';
+                            errorMsg = 'الملف غير مدعوم أو غير موجود';
                             break;
                     }
                 }
                 
-                this.updateStatus(errorMsg);
-                this.showError(`${errorMsg}. تأكد من وجود ملف "mam.mp3" في نفس مجلد الصفحة.`);
-            }
-
-            showError(message) {
-                this.errorMessage.textContent = message;
-                this.errorMessage.style.display = 'block';
-                
-                // Hide error after 10 seconds
-                setTimeout(() => {
-                    this.errorMessage.style.display = 'none';
-                }, 10000);
+                this.updateStatus(`❌ ${errorMsg}`);
             }
         }
 
         // Initialize player when page loads
         document.addEventListener('DOMContentLoaded', () => {
-            new AudioPlayerController();
+            new SimpleAudioPlayer();
         });
 
-        // Handle page visibility change
-        document.addEventListener('visibilitychange', () => {
-            const audio = document.getElementById('audioPlayer');
-            if (document.hidden && audio && !audio.paused) {
-                // Optionally pause when page becomes hidden
-                // audio.pause();
-            }
-        });
-    </script>
-</body>
-</html>
-
+        // Auto-start when page becomes visible
+        document.addEventListener('visibilitychange',
